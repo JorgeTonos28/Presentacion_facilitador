@@ -1,0 +1,16 @@
+{
+  "name": "presentacion-facilitador",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Presentación sincronizada con consola móvil del facilitador.",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
