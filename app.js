@@ -37,6 +37,7 @@ function freshState() {
     startedAt: null,
     slideAccumulatedMs: 0,
     slideStartedAt: null,
+    quizChoice: null,
     revision: 1,
     updatedAt: Date.now()
   };
@@ -148,6 +149,19 @@ app.post('/api/control', requirePin, (req, res) => {
     case 'start': startClock(); break;
     case 'pause': pauseClock(); break;
     case 'toggleTimer': state.running ? pauseClock() : startClock(); break;
+    case 'quizChoice': {
+      const choice = String(value || '').toUpperCase();
+      if (!['A','B','C'].includes(choice)) {
+        return res.status(400).json({ ok: false, error: 'Respuesta no válida' });
+      }
+      state.quizChoice = choice;
+      touch();
+      break;
+    }
+    case 'clearQuiz':
+      state.quizChoice = null;
+      touch();
+      break;
     case 'resetTimer':
       state.accumulatedMs = 0;
       state.slideAccumulatedMs = 0;
