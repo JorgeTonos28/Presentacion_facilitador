@@ -60,7 +60,7 @@ button,input,select{font:inherit}.hidden{display:none!important}.muted{color:var
 .nav-button{height:56px;font-size:18px}.nav-button.primary{background:var(--blue);color:#fff}
 .nav-button.secondary{background:#dce7f0;color:var(--blue);font-size:26px}.nav-button:active,.soft:active{transform:translateY(1px)}
 @media(min-width:680px){
-  .console{padding-top:34px}.timing-grid{grid-template-columns:1fr 1fr 1fr}.timing-card.compact{grid-column:auto;display:block}
+  .console{padding-top:34px}.timing-grid{grid-template-columns:1fr 1fr}.timing-card.compact{grid-column:auto;display:block}
   .script-text{font-size:23px}.bottom-nav{left:50%;right:auto;width:min(760px,100%);transform:translateX(-50%);
   border:1px solid var(--line);border-bottom:0;border-radius:18px 18px 0 0}
 }
