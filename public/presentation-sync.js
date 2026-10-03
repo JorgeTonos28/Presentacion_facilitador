@@ -35,7 +35,9 @@
   `;
   document.head.appendChild(style);
 
-  const audienceMode = new URLSearchParams(location.search).has('audiencia');
+  const params = new URLSearchParams(location.search);
+  const audienceMode = params.has('audiencia');
+  const facilitatorPreview = params.has('facilitador');
   const syncEveryMs = audienceMode ? 1200 + Math.floor(Math.random() * 250) : 400;
 
   let serverState = null;
@@ -77,6 +79,37 @@
     return (serverState.accumulatedMs + live) / 1000;
   }
 
+  function applyQuizState() {
+    const options = [...document.querySelectorAll('.quiz-option')];
+    const feedback = document.getElementById('quiz-feedback');
+    if (!options.length || !feedback) return;
+
+    const choice = serverState && serverState.quizChoice
+      ? String(serverState.quizChoice).toUpperCase()
+      : null;
+
+    if (!choice) {
+      if (facilitatorPreview) return;
+      options.forEach(el => el.classList.remove('correct','incorrect'));
+      feedback.classList.remove('error');
+      feedback.textContent = 'Selecciona la respuesta que consideres correcta.';
+      return;
+    }
+
+    options.forEach(el => {
+      el.classList.remove('correct','incorrect');
+      if (String(el.dataset.choice || '').toUpperCase() === choice) {
+        el.classList.add(choice === 'B' ? 'correct' : 'incorrect');
+      }
+    });
+
+    const correct = choice === 'B';
+    feedback.classList.toggle('error', !correct);
+    feedback.textContent = correct
+      ? 'Correcto. Las variantes pueden crear grupos separados en filtros, tablas dinámicas y fórmulas. Una lista ayuda a mantener un valor consistente.'
+      : 'Excel no unifica estas variantes por su significado. Revisa qué ocurre cuando compara los valores.';
+  }
+
   function applyState() {
     if (!serverState) return;
 
@@ -96,6 +129,8 @@
 
     const display = ensurePublicTimer();
     if (display) display.textContent = formatTime(elapsedSeconds());
+
+    applyQuizState();
 
     const timer = document.getElementById('hud-timer');
     if (timer) {
@@ -128,6 +163,11 @@
   }, true);
 
   document.addEventListener('click', event => {
+    if (!facilitatorPreview && event.target.closest('.quiz-option')) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
     if (event.target.closest('#hud-timer,#hud-footer,#progress-container')) {
       event.preventDefault();
       event.stopImmediatePropagation();
