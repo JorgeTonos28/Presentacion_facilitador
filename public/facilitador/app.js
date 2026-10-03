@@ -67,18 +67,22 @@
     $('next-title').textContent=guide.slides[g.slide]?.title||'Fin de la presentación';
     $('jump').value=String(g.slide);
 
-    $('slide-time').textContent=`${fmt(snap.slideElapsed)} / ${fmt(g.durationSec)}`;
-    $('sticky-slide-time').textContent=`${fmt(snap.slideElapsed)} / ${fmt(g.durationSec)}`;
+    const atSessionStart = snap.elapsed <= 0.001 && !serverState.running;
+    const slideEntryElapsed = Math.max(0, snap.elapsed - snap.slideElapsed);
+    const effectiveBudget = atSessionStart
+      ? g.durationSec
+      : Math.max(0, g.endSec - slideEntryElapsed);
+    const remain = g.endSec - snap.elapsed;
+
+    $('slide-time').textContent=`${fmt(snap.slideElapsed)} / ${fmt(effectiveBudget)}`;
+    $('sticky-slide-time').textContent=`${fmt(snap.slideElapsed)} / ${fmt(effectiveBudget)}`;
     $('session-time').textContent=`${fmt(snap.elapsed)} / ${fmt(guide.totalDurationSec)}`;
     $('global-status').textContent=`Meta acumulada ${fmt(g.endSec)}`;
-    const delta=snap.elapsed-g.endSec;
-    $('delta').textContent=signed(delta);
 
     const card=$('slide-time-card');
     const sticky=$('sticky-slide-status');
     card.classList.remove('ok','warn','over');
     sticky.classList.remove('ok','warn','over');
-    const remain=g.durationSec-snap.slideElapsed;
     if(remain<0){
       card.classList.add('over');
       sticky.classList.add('over');
