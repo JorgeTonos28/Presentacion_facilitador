@@ -8,6 +8,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const FACILITATOR_PIN = String(process.env.FACILITATOR_PIN || '4827');
 const TOTAL_SLIDES = 75;
+const TOTAL_DURATION_SEC = 2700;
 
 app.disable('x-powered-by');
 app.use(express.json({ limit: '32kb' }));
@@ -17,19 +18,14 @@ app.use((req, res, next) => {
   next();
 });
 
-const guidePartDir = path.join(__dirname, 'data', 'guide-parts');
-const guideSlides = fs.readdirSync(guidePartDir)
+const guideDir = path.join(__dirname, 'data', 'guide-parts');
+const guideSlides = fs.readdirSync(guideDir)
   .filter(name => /^guide-\d+\.json$/.test(name))
   .sort()
-  .flatMap(name => require(path.join(guidePartDir, name)));
-const guide = { totalDurationSec: 2700, slides: guideSlides };
+  .flatMap(name => JSON.parse(fs.readFileSync(path.join(guideDir, name), 'utf8')));
+const guide = { totalDurationSec: TOTAL_DURATION_SEC, slides: guideSlides };
 
-const deckPartDir = path.join(__dirname, 'data', 'deck-parts');
-const deckHtml = fs.readdirSync(deckPartDir)
-  .filter(name => /^deck-\d+\.part$/.test(name))
-  .sort()
-  .map(name => fs.readFileSync(path.join(deckPartDir, name), 'utf8'))
-  .join('');
+const deckPath = path.join(__dirname, 'public', 'presentacion', 'deck.html');
 
 let state = freshState();
 
@@ -47,44 +43,39 @@ function freshState() {
 }
 
 function now() { return Date.now(); }
+function touch() { state.revision += 1; state.updatedAt = now(); }
 
-function snapshotTimer(target = state, at = now()) {
-  const live = target.running && target.startedAt ? Math.max(0, at - target.startedAt) : 0;
-  const slideLive = target.running && target.slideStartedAt ? Math.max(0, at - target.slideStartedAt) : 0;
+function snapshot(at = now()) {
+  const live = state.running && state.startedAt ? Math.max(0, at - state.startedAt) : 0;
+  const slideLive = state.running && state.slideStartedAt ? Math.max(0, at - state.slideStartedAt) : 0;
   return {
-    elapsedMs: target.accumulatedMs + live,
-    slideElapsedMs: target.slideAccumulatedMs + slideLive
+    elapsedMs: state.accumulatedMs + live,
+    slideElapsedMs: state.slideAccumulatedMs + slideLive
   };
-}
-
-function touch() {
-  state.revision += 1;
-  state.updatedAt = now();
-}
-
-function pauseClock() {
-  if (!state.running) return;
-  const at = now();
-  const snap = snapshotTimer(state, at);
-  state.accumulatedMs = snap.elapsedMs;
-  state.slideAccumulatedMs = snap.slideElapsedMs;
-  state.startedAt = null;
-  state.slideStartedAt = null;
-  state.running = false;
-  touch();
 }
 
 function startClock() {
   if (state.running) return;
   const at = now();
+  state.running = true;
   state.startedAt = at;
   state.slideStartedAt = at;
-  state.running = true;
   touch();
 }
 
-function setSlide(slide) {
-  const next = Math.max(1, Math.min(TOTAL_SLIDES, Number(slide) || 1));
+function pauseClock() {
+  if (!state.running) return;
+  const snap = snapshot();
+  state.accumulatedMs = snap.elapsedMs;
+  state.slideAccumulatedMs = snap.slideElapsedMs;
+  state.running = false;
+  state.startedAt = null;
+  state.slideStartedAt = null;
+  touch();
+}
+
+function setSlide(value) {
+  const next = Math.max(1, Math.min(TOTAL_SLIDES, Number(value) || 1));
   if (next === state.slide) return;
   state.slide = next;
   state.slideAccumulatedMs = 0;
@@ -102,15 +93,42 @@ function requirePin(req, res, next) {
 }
 
 app.get('/', (_req, res) => res.redirect('/presentacion'));
-app.get('/presentacion', (_req, res) => res.type('html').send(deckHtml));
-app.get('/health', (_req, res) => res.json({ ok: true, node: process.version, uptime: process.uptime() }));
+
+app.get('/health', (_req, res) => {
+  res.json({
+    ok: true,
+    node: process.version,
+    uptime: process.uptime(),
+    deckReady: fs.existsSync(deckPath),
+    slidesInGuide: guideSlides.length
+  });
+});
+
+app.get('/presentacion', (_req, res) => {
+  if (!fs.existsSync(deckPath)) {
+    return res.status(503).type('html').send(
+      '<h1>Falta public/presentacion/deck.html</h1>' +
+      '<p>Sube el HTML final de la presentación con ese nombre y reinicia la aplicación.</p>'
+    );
+  }
+  let html = fs.readFileSync(deckPath, 'utf8');
+  const tag = '<script src="/presentation-sync.js"></script>';
+  if (!html.includes('/presentation-sync.js')) {
+    html = html.includes('</body>') ? html.replace('</body>', tag + '</body>') : html + tag;
+  }
+  res.type('html').send(html);
+});
+
+app.get('/presentation-sync.js', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'presentation-sync.js'));
+});
 
 app.get('/api/state', (_req, res) => {
   res.json({
     ok: true,
     serverNow: now(),
     totalSlides: TOTAL_SLIDES,
-    totalDurationSec: guide.totalDurationSec,
+    totalDurationSec: TOTAL_DURATION_SEC,
     state
   });
 });
@@ -120,8 +138,8 @@ app.get('/api/guide', requirePin, (_req, res) => {
 });
 
 app.post('/api/control', requirePin, (req, res) => {
-  const action = String(req.body?.action || '');
-  const value = req.body?.value;
+  const action = String((req.body && req.body.action) || '');
+  const value = req.body && req.body.value;
 
   switch (action) {
     case 'next': setSlide(state.slide + 1); break;
@@ -147,10 +165,13 @@ app.post('/api/control', requirePin, (req, res) => {
   res.json({ ok: true, serverNow: now(), state });
 });
 
-app.use('/facilitador', express.static(path.join(__dirname, 'public', 'facilitador'), { index: 'index.html', maxAge: 0 }));
+app.use('/facilitador', express.static(path.join(__dirname, 'public', 'facilitador'), {
+  index: 'index.html',
+  maxAge: 0
+}));
 
 app.use((_req, res) => res.status(404).send('No encontrado'));
 
 app.listen(PORT, () => {
-  console.log(`Presentación lista en puerto ${PORT}`);
+  console.log('Presentación lista en puerto ' + PORT);
 });
