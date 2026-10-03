@@ -18,6 +18,20 @@ button,input,select{font:inherit}.hidden{display:none!important}.muted{color:var
 .eyebrow{margin:0;color:var(--teal);font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase}
 .slide-counter{flex:0 0 auto;background:var(--navy);color:#fff;border-radius:16px;padding:10px 14px;display:flex;align-items:baseline;gap:3px}
 .slide-counter span{font-size:28px;font-weight:800}.slide-counter small{opacity:.72}
+.sticky-slide-status{
+  position:sticky;top:0;z-index:18;
+  display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;
+  margin:0 0 12px;padding:10px 12px;border:1px solid var(--line);border-radius:14px;
+  background:rgba(255,255,255,.94);backdrop-filter:blur(12px);
+  box-shadow:0 8px 24px rgba(7,26,45,.08);
+  font-variant-numeric:tabular-nums
+}
+.sticky-slide-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.sticky-slide-status>strong{justify-self:center;font-size:18px}
+.sticky-slide-state{justify-self:end;font-size:12px;font-weight:800;border-radius:999px;padding:5px 8px}
+.sticky-slide-status.ok{border-color:#a7d8c2}.sticky-slide-status.ok .sticky-slide-state{background:#e9f8f0;color:var(--ok)}
+.sticky-slide-status.warn{border-color:#ffd89d}.sticky-slide-status.warn .sticky-slide-state{background:#fff3da;color:var(--warning)}
+.sticky-slide-status.over{border-color:#f3b7b2}.sticky-slide-status.over .sticky-slide-state{background:#fff0ee;color:var(--danger)}
 .timing-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .timing-card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
 .timing-card.compact{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr;align-items:baseline;gap:8px 18px}
@@ -49,4 +63,10 @@ button,input,select{font:inherit}.hidden{display:none!important}.muted{color:var
   .console{padding-top:34px}.timing-grid{grid-template-columns:1fr 1fr 1fr}.timing-card.compact{grid-column:auto;display:block}
   .script-text{font-size:23px}.bottom-nav{left:50%;right:auto;width:min(760px,100%);transform:translateX(-50%);
   border:1px solid var(--line);border-bottom:0;border-radius:18px 18px 0 0}
+}
+
+@media(max-width:420px){
+  .sticky-slide-status{grid-template-columns:auto 1fr;gap:6px 10px}
+  .sticky-slide-state{grid-column:1/-1;justify-self:start}
+  .sticky-slide-status>strong{justify-self:end}
 }
