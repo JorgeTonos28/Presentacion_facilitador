@@ -35,6 +35,9 @@
   `;
   document.head.appendChild(style);
 
+  const audienceMode = new URLSearchParams(location.search).has('audiencia');
+  const syncEveryMs = audienceMode ? 1200 + Math.floor(Math.random() * 250) : 400;
+
   let serverState = null;
   let clockOffset = 0;
   let lastSlide = null;
@@ -133,6 +136,6 @@
 
   ensurePublicTimer();
   setInterval(applyState, 100);
-  setInterval(sync, 400);
+  setInterval(sync, syncEveryMs);
   sync();
 })();
