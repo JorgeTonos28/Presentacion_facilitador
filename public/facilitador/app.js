@@ -58,6 +58,7 @@
     $('section').textContent=g.section;
     $('slide-title').textContent=g.title;
     $('slide-number').textContent=g.slide;
+    $('sticky-slide-number').textContent=g.slide;
     $('script').textContent=g.script;
     $('action').textContent=g.action||'—';
     $('transition').textContent=g.transition||'—';
@@ -67,23 +68,34 @@
     $('jump').value=String(g.slide);
 
     $('slide-time').textContent=`${fmt(snap.slideElapsed)} / ${fmt(g.durationSec)}`;
+    $('sticky-slide-time').textContent=`${fmt(snap.slideElapsed)} / ${fmt(g.durationSec)}`;
     $('session-time').textContent=`${fmt(snap.elapsed)} / ${fmt(guide.totalDurationSec)}`;
     $('global-status').textContent=`Meta acumulada ${fmt(g.endSec)}`;
     const delta=snap.elapsed-g.endSec;
     $('delta').textContent=signed(delta);
 
     const card=$('slide-time-card');
+    const sticky=$('sticky-slide-status');
     card.classList.remove('ok','warn','over');
+    sticky.classList.remove('ok','warn','over');
     const remain=g.durationSec-snap.slideElapsed;
     if(remain<0){
       card.classList.add('over');
-      $('slide-status').textContent=`Pasado por ${fmt(-remain)}`;
+      sticky.classList.add('over');
+      const status=`Pasado por ${fmt(-remain)}`;
+      $('slide-status').textContent=status;
+      $('sticky-slide-state').textContent=status;
     } else if(remain<=8){
       card.classList.add('warn');
-      $('slide-status').textContent=`Quedan ${Math.ceil(remain)} s`;
+      sticky.classList.add('warn');
+      const status=`Quedan ${Math.ceil(remain)} s`;
+      $('slide-status').textContent=status;
+      $('sticky-slide-state').textContent=status;
     } else {
       card.classList.add('ok');
+      sticky.classList.add('ok');
       $('slide-status').textContent='En tiempo';
+      $('sticky-slide-state').textContent='En tiempo';
     }
 
     $('timer-toggle').textContent=serverState.running?'⏸ Pausar cronómetro':'▶ Iniciar cronómetro';
