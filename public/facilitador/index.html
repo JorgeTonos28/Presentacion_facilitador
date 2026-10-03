@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Consola del facilitador</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="login" class="login-shell">
+    <form id="login-form" class="login-card" autocomplete="off">
+      <div class="brand-mark">JT</div>
+      <p class="eyebrow">Práctica didáctica</p>
+      <h1>Consola del facilitador</h1>
+      <p class="muted">Introduce el PIN para acceder al guion y controlar la presentación.</p>
+      <label for="pin">PIN</label>
+      <input id="pin" name="pin" type="password" inputmode="numeric" maxlength="12" required autofocus>
+      <button class="primary" type="submit">Entrar</button>
+      <p id="login-error" class="error" role="alert"></p>
+    </form>
+  </div>
+
+  <main id="console" class="console hidden">
+    <header class="topbar">
+      <div>
+        <p id="section" class="eyebrow">—</p>
+        <h1 id="slide-title">—</h1>
+      </div>
+      <div class="slide-counter"><span id="slide-number">1</span><small>/ 75</small></div>
+    </header>
+
+    <section class="timing-grid">
+      <article id="slide-time-card" class="timing-card">
+        <span>Slide</span>
+        <strong id="slide-time">00:00 / 00:20</strong>
+        <small id="slide-status">En tiempo</small>
+      </article>
+      <article class="timing-card">
+        <span>Sesión</span>
+        <strong id="session-time">00:00 / 45:00</strong>
+        <small id="global-status">Meta acumulada 00:20</small>
+      </article>
+      <article class="timing-card compact">
+        <span>Desfase</span>
+        <strong id="delta">−00:20</strong>
+        <small>respecto al cierre de este slide</small>
+      </article>
+    </section>
+
+    <details class="preview-card">
+      <summary>Vista previa del slide actual</summary>
+      <div class="preview-frame"><iframe id="preview" src="/presentacion" title="Vista previa"></iframe></div>
+    </details>
+
+    <section class="script-card">
+      <p class="card-label">QUÉ DECIR</p>
+      <div id="script" class="script-text"></div>
+    </section>
+
+    <section id="action-card" class="support-card">
+      <p class="card-label">ACCIÓN / PAUSA</p>
+      <p id="action"></p>
+    </section>
+
+    <section id="transition-card" class="support-card transition">
+      <p class="card-label">TRANSICIÓN</p>
+      <p id="transition"></p>
+    </section>
+
+    <section class="next-card">
+      <span>Siguiente</span>
+      <strong id="next-title">—</strong>
+    </section>
+
+    <section class="tools-card">
+      <button id="timer-toggle" class="soft">▶ Iniciar cronómetro</button>
+      <button id="timer-reset" class="soft">↺ Reiniciar tiempo</button>
+      <label class="jump-label" for="jump">Ir a slide</label>
+      <select id="jump"></select>
+    </section>
+
+    <div id="connection" class="connection">Conectando…</div>
+
+    <nav class="bottom-nav" aria-label="Control de diapositivas">
+      <button id="prev" class="nav-button secondary" aria-label="Slide anterior">←</button>
+      <button id="next" class="nav-button primary">Siguiente →</button>
+    </nav>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
