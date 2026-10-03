@@ -1,5 +1,6 @@
 'use strict';
 
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 
@@ -16,7 +17,19 @@ app.use((req, res, next) => {
   next();
 });
 
-const guide = require('./data/guion.json');
+const guidePartDir = path.join(__dirname, 'data', 'guide-parts');
+const guideSlides = fs.readdirSync(guidePartDir)
+  .filter(name => /^guide-\d+\.json$/.test(name))
+  .sort()
+  .flatMap(name => require(path.join(guidePartDir, name)));
+const guide = { totalDurationSec: 2700, slides: guideSlides };
+
+const deckPartDir = path.join(__dirname, 'data', 'deck-parts');
+const deckHtml = fs.readdirSync(deckPartDir)
+  .filter(name => /^deck-\d+\.part$/.test(name))
+  .sort()
+  .map(name => fs.readFileSync(path.join(deckPartDir, name), 'utf8'))
+  .join('');
 
 let state = freshState();
 
@@ -89,6 +102,7 @@ function requirePin(req, res, next) {
 }
 
 app.get('/', (_req, res) => res.redirect('/presentacion'));
+app.get('/presentacion', (_req, res) => res.type('html').send(deckHtml));
 app.get('/health', (_req, res) => res.json({ ok: true, node: process.version, uptime: process.uptime() }));
 
 app.get('/api/state', (_req, res) => {
@@ -133,7 +147,6 @@ app.post('/api/control', requirePin, (req, res) => {
   res.json({ ok: true, serverNow: now(), state });
 });
 
-app.use('/presentacion', express.static(path.join(__dirname, 'public', 'presentacion'), { index: 'index.html', maxAge: 0 }));
 app.use('/facilitador', express.static(path.join(__dirname, 'public', 'facilitador'), { index: 'index.html', maxAge: 0 }));
 
 app.use((_req, res) => res.status(404).send('No encontrado'));
