@@ -4,15 +4,59 @@
   const style = document.createElement('style');
   style.textContent = `
     #btn-overview,#btn-edit,#btn-help,#btn-prev,#btn-next,#progress-container{display:none!important}
-    #hud-timer{pointer-events:none!important;cursor:default!important}
-    #hud-timer.over-budget{background:transparent!important;color:inherit!important;border-color:var(--line)!important}
-    .theme-dark-active #hud-timer.over-budget{color:#eef6fa!important;border-color:rgba(255,255,255,.23)!important}
+
+    /* The original deck keeps its own internal timer alive. Hide only its
+       changing text and render the server clock in an independent span so
+       both timers can never fight over the same DOM node. */
+    #timer-display{display:none!important}
+    #public-timer-display{display:inline!important;font-variant-numeric:tabular-nums}
+
+    #hud-timer{
+      pointer-events:none!important;
+      cursor:default!important;
+      animation:none!important;
+      box-shadow:none!important;
+    }
+    #hud-timer.over-budget{
+      animation:none!important;
+      background:transparent!important;
+      color:inherit!important;
+      border-color:var(--line)!important;
+      box-shadow:none!important;
+    }
+    #hud-timer.over-budget .timer-pulse-dot{
+      background:var(--teal)!important;
+      box-shadow:none!important;
+    }
+    .theme-dark-active #hud-timer.over-budget{
+      color:#eef6fa!important;
+      border-color:rgba(255,255,255,.23)!important;
+    }
   `;
   document.head.appendChild(style);
 
   let serverState = null;
   let clockOffset = 0;
   let lastSlide = null;
+  let publicDisplay = null;
+
+  function ensurePublicTimer() {
+    if (publicDisplay && publicDisplay.isConnected) return publicDisplay;
+
+    const original = document.getElementById('timer-display');
+    const timer = document.getElementById('hud-timer');
+    if (!timer) return null;
+
+    publicDisplay = document.getElementById('public-timer-display');
+    if (!publicDisplay) {
+      publicDisplay = document.createElement('span');
+      publicDisplay.id = 'public-timer-display';
+      publicDisplay.textContent = '00:00';
+      if (original) original.insertAdjacentElement('afterend', publicDisplay);
+      else timer.appendChild(publicDisplay);
+    }
+    return publicDisplay;
+  }
 
   function formatTime(seconds) {
     seconds = Math.max(0, Math.floor(seconds || 0));
@@ -39,12 +83,15 @@
         window.Presentation.goToSlide(target - 1);
         lastSlide = target;
       }
+
+      /* Freeze the deck's private clock. Its display is hidden anyway; this
+         also prevents its late-state animation from affecting the public HUD. */
       if (typeof window.Presentation.freezeTimer === 'function') {
         window.Presentation.freezeTimer();
       }
     }
 
-    const display = document.getElementById('timer-display');
+    const display = ensurePublicTimer();
     if (display) display.textContent = formatTime(elapsedSeconds());
 
     const timer = document.getElementById('hud-timer');
@@ -52,6 +99,7 @@
       timer.classList.remove('over-budget');
       timer.classList.toggle('finished', !serverState.running);
       timer.setAttribute('aria-label', 'Cronómetro general de la sesión');
+      timer.setAttribute('aria-pressed', String(!serverState.running));
     }
   }
 
@@ -64,7 +112,7 @@
       serverState = data.state;
       applyState();
     } catch (_) {
-      // Keep the last known slide visible. The presentation remains usable.
+      /* Keep the last known slide and time visible. */
     }
   }
 
@@ -83,6 +131,7 @@
     }
   }, true);
 
+  ensurePublicTimer();
   setInterval(applyState, 100);
   setInterval(sync, 400);
   sync();
