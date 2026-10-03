@@ -28,6 +28,25 @@
     await sync();
   }
 
+  function bindPreviewInteractions(){
+    const frame=$('preview');
+    const attach=()=>{
+      try{
+        const doc=frame.contentDocument;
+        if(!doc || doc.__facilitatorRemoteBound) return;
+        doc.__facilitatorRemoteBound=true;
+        doc.addEventListener('click',event=>{
+          const option=event.target.closest && event.target.closest('.quiz-option');
+          if(!option) return;
+          const choice=String(option.dataset.choice||'').toUpperCase();
+          if(['A','B','C'].includes(choice)) control('quizChoice',choice);
+        });
+      }catch(_){}
+    };
+    frame.addEventListener('load',attach);
+    attach();
+  }
+
   function populateJump(){
     $('jump').replaceChildren(...guide.slides.map(s=>{
       const o=document.createElement('option');
@@ -139,6 +158,8 @@
       busy=false;
     }
   }
+
+  bindPreviewInteractions();
 
   $('login-form').addEventListener('submit',async e=>{
     e.preventDefault();
